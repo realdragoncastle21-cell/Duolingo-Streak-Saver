@@ -1,51 +1,66 @@
 import os
-import requests
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-# 1. Grab your login info securely from GitHub Secrets
+# 1. Setup Headless Chrome Options (Crucial for GitHub Actions)
+chrome_options = Options()
+chrome_options.add_argument("--headless")  # Runs without a physical screen
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--window-size=1920,1080")
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+
+# Grab secrets
 USERNAME = os.environ.get("DUOLINGO_USERNAME")
 PASSWORD = os.environ.get("DUOLINGO_PASSWORD")
 
 if not USERNAME or not PASSWORD:
-    print("❌ Error: DUOLINGO_USERNAME or DUOLINGO_PASSWORD secret is missing!")
+    print("❌ Error: Secrets are missing!")
     exit(1)
 
-print(f"🔄 Attempting secure login for user: {USERNAME}...")
-
-# Set up the login session
-session = requests.Session()
-session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "Content-Type": "application/json"
-})
-
-login_url = "https://www.duolingo.com/2017-06-30/login"
-login_data = {
-    "login": USERNAME,
-    "password": PASSWORD
-}
+driver = webdriver.Chrome(options=chrome_options)
 
 try:
-    # Perform the official background login
-    response = session.post(login_url, json=login_data)
+    print("🌐 Opening Duolingo...")
+    driver.get("https://www.duolingo.com")
+    time.path(3)
+
+    # Click "I ALREADY HAVE AN ACCOUNT"
+    print("🖱️ Clicking login button...")
+    login_btn = WebDriverWait(driver, 15).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-test='have-account']"))
+    )
+    login_btn.click()
+    time.sleep(2)
+
+    # Type Username and Password
+    print("⌨️ Entering credentials...")
+    user_input = driver.find_element(By.CSS_SELECTOR, "input[data-test='email-input']")
+    pass_input = driver.find_element(By.CSS_SELECTOR, "input[data-test='password-input']")
     
-    if response.status_code != 200:
-        print(f"❌ Login failed! Duolingo rejected your password. Status: {response.status_code}")
-        exit(1)
-        
-    print("✅ Login successful! Simulating activity to secure your streak...")
+    user_input.send_keys(USERNAME)
+    pass_input.send_keys(PASSWORD)
+    time.sleep(1)
+
+    # Submit Login
+    submit_btn = driver.find_element(By.CSS_SELECTOR, "button[data-test='register-button']")
+    submit_btn.click()
     
-    # Send a quick backend signal to log a practice action
-    # This pings the server to register your account as active for today
-    user_id = response.json().get("userId")
-    streak_url = f"https://www.duolingo.com/2017-06-30/users/{user_id}"
+    print("⏳ Waiting for dashboard to load...")
+    # Wait until the main learning path shows up to confirm a successful login session
+    WebDriverWait(driver, 20).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-test='player-next'], [data-test='home-nav']"))
+    )
     
-    # Pull current profile to trigger account verification sync
-    profile_response = session.get(streak_url)
-    if profile_response.status_code == 200:
-        print("🎉 Activity synced perfectly. Your streak is safe!")
-    else:
-        print("⚠️ Login worked, but streak sync returned a warning.")
+    print("🎉 Successfully logged in as a real browser user! Streak session synced.")
 
 except Exception as e:
-    print(f"💥 Critical Error running the script: {str(e)}")
+    print(f"❌ Automation failed: {str(e)}")
     exit(1)
+
+finally:
+    driver.quit()
