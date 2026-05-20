@@ -6,9 +6,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# 1. Setup Headless Chrome Options (Crucial for GitHub Actions)
+# Setup Headless Chrome Options
 chrome_options = Options()
-chrome_options.add_argument("--headless")  # Runs without a physical screen
+chrome_options.add_argument("--headless")  # Runs silently in the background
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--window-size=1920,1080")
@@ -27,7 +27,7 @@ driver = webdriver.Chrome(options=chrome_options)
 try:
     print("🌐 Opening Duolingo...")
     driver.get("https://www.duolingo.com")
-    time.path(3)
+    time.sleep(3)  # Fixed typo here!
 
     # Click "I ALREADY HAVE AN ACCOUNT"
     print("🖱️ Clicking login button...")
@@ -47,13 +47,14 @@ try:
     time.sleep(1)
 
     # Submit Login
+    print("🚀 Submitting credentials...")
     submit_btn = driver.find_element(By.CSS_SELECTOR, "button[data-test='register-button']")
     submit_btn.click()
     
     print("⏳ Waiting for dashboard to load...")
-    # Wait until the main learning path shows up to confirm a successful login session
+    # Wait until the home navigation shows up to confirm successful login
     WebDriverWait(driver, 20).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-test='player-next'], [data-test='home-nav']"))
+        EC.presence_of_element_located((By.CSS_SELECTOR, "[data-test='home-nav']"))
     )
     
     print("🎉 Successfully logged in as a real browser user! Streak session synced.")
