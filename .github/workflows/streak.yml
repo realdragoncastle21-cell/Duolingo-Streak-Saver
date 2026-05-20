@@ -1,28 +1,28 @@
-name: Keep my Duolingo streak
+name: Headless Duolingo Streak
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Runs automatically every day
-  workflow_dispatch: # Allows you to trigger it manually
+    - cron: '0 12 * * *'
+  workflow_dispatch:
 
 jobs:
-  run-bot:
+  run-browser-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python environment
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install required network tools
+      - name: Install Chrome and Selenium Tools
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install selenium
 
-      - name: Execute Duolingo Streak Protector
+      - name: Run Streak Protector
         env:
           DUOLINGO_USERNAME: ${{ secrets.DUOLINGO_USERNAME }}
           DUOLINGO_PASSWORD: ${{ secrets.DUOLINGO_PASSWORD }}
